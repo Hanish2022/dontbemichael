@@ -39,6 +39,16 @@ test('markdown previews, source edits — the v0.3.4 behaviour is unchanged', ()
   assert.equal(classifyPathToken('.github/workflows/release.yml'), 'edit');
 });
 
+test('dotfile config files edit rather than reveal — their name is the whole editable key', () => {
+  // Value: protects=a click on .gitignore, .npmrc and friends opens them in the editor, not Finder; fails_when=an editable dotfile falls to reveal because extensionOf returns '' for a leading dot (askFiles.ts); why_new=EDIT_EXTS listed these as extensions, but extensionOf never yields them; seam=none
+  for (const p of ['.gitignore', 'repo/.dockerignore', '/home/x/.editorconfig', '.npmrc', 'a/b/.nvmrc']) {
+    assert.equal(classifyPathToken(p), 'edit', p);
+  }
+  // And they are worth underlining in the first place, with or without a separator.
+  assert.ok(isPathToken('.gitignore'), '.gitignore is a path token');
+  assert.ok(isPathToken('repo/.npmrc'), 'repo/.npmrc is a path token');
+});
+
 test('images reveal rather than open — a click on a path is a navigation gesture', () => {
   for (const p of ['build/icon.png', 'shot.JPEG', 'a/b/logo.svg', 'anim.webp']) {
     assert.equal(classifyPathToken(p), 'reveal', p);

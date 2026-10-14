@@ -56,9 +56,23 @@ const EDIT_EXTS = new Set([
   'env', 'properties', 'lock', 'gradle', 'tf', 'tfvars', 'graphql', 'gql',
   'proto', 'sql', 'csv', 'tsv',
   // plain text
-  'txt', 'text', 'log', 'diff', 'patch', 'gitignore', 'dockerignore',
-  'editorconfig', 'npmrc', 'nvmrc'
+  'txt', 'text', 'log', 'diff', 'patch'
 ]);
+
+/**
+ * Editable files whose WHOLE NAME is the key, not an extension. `extensionOf`
+ * treats a leading dot as part of the name and returns '' for `.gitignore`
+ * (askFiles.ts), so these can never arrive as an extension — they have to be
+ * matched by base name or they fall to reveal instead of opening in the editor.
+ */
+const EDIT_NAMES = new Set([
+  '.gitignore', '.dockerignore', '.editorconfig', '.npmrc', '.nvmrc'
+]);
+
+/** The last path segment, split on both separators. */
+function baseName(token: string): string {
+  return token.split(/[\\/]/).pop() ?? token;
+}
 
 export type PathAction = 'preview' | 'edit' | 'reveal';
 
@@ -128,6 +142,7 @@ export function stripPathToken(raw: string): string {
  * false positive is one underline that stats to nothing and does nothing.
  */
 export function isPathToken(token: string): boolean {
+  if (EDIT_NAMES.has(baseName(token))) return true;
   const ext = extensionOf(token);
   if (!ext) return false;
   if (PREVIEW_EXTS.has(ext) || EDIT_EXTS.has(ext) || isImagePath(token)) return true;
@@ -148,6 +163,6 @@ export function classifyPathToken(token: string): PathAction {
   const ext = extensionOf(token);
   if (PREVIEW_EXTS.has(ext)) return 'preview';
   if (isImagePath(token)) return 'reveal';
-  if (EDIT_EXTS.has(ext)) return 'edit';
+  if (EDIT_EXTS.has(ext) || EDIT_NAMES.has(baseName(token))) return 'edit';
   return 'reveal';
 }
